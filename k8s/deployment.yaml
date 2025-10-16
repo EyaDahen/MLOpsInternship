@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
         - name: groq-app
-          image: groq-app:latest
-          imagePullPolicy: Never
+          image: eyadahen/groq-app:latest
+          imagePullPolicy: Always
           env:
             - name: GROQ_API_KEY
               valueFrom:
