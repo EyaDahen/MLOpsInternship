@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: groq-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: groq-app
+  template:
+    metadata:
+      labels:
+        app: groq-app
+    spec:
+      containers:
+        - name: groq-app
+          image: groq-app:latest
+          imagePullPolicy: Never
+          env:
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: groq-secret
+                  key: api-key
+          ports:
+            - containerPort: 5000
