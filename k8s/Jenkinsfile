@@ -1,0 +1,135 @@
+pipeline {
+    agent any
+
+    environment {
+        // 🔐 Variables globales
+        GROQ_API_KEY = credentials('groq_api_key')             // Jenkins Credential ID
+        SONARQUBE_ENV = 'SonarQubeServer'                      // Nom de ton serveur SonarQube
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKERHUB_USER = 'eyadahen'                            // 🔁 Remplace par ton user Docker Hub
+        IMAGE_NAME = 'groq-app'
+        IMAGE_TAG = 'latest'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/EyaDahen/MLOpsInternship.git'
+            }
+        }
+
+        stage('Setup Python Environment') {
+            steps {
+                sh '''
+                    pip install --user --upgrade pip
+                    pip install --user requests groq
+                '''
+            }
+        }
+
+        stage('Run Groq Script') {
+            steps {
+                sh '''
+                    echo "=== Running Groq API script ==="
+                    python3 main.py
+                '''
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            environment {
+                SONAR_SCANNER_HOME = tool 'SonarQubeScanner'
+            }
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh '''
+                        ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
+                        -Dsonar.projectKey=MLOpsProject \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=$SONAR_HOST_URL \
+                        -Dsonar.login=$SONAR_AUTH_TOKEN
+                    '''
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "=== Building Docker Image ==="
+                        docker build -t $IMAGE_NAME:$IMAGE_TAG .
+
+                        echo "=== Tagging Docker Image for Docker Hub ==="
+                        docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG
+
+                        echo "=== Logging into Docker Hub ==="
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+                        echo "=== Pushing Image to Docker Hub ==="
+                        docker push $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG
+                    '''
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                sh '''
+                    echo "=== Running Groq Container ==="
+                    docker run --rm -e GROQ_API_KEY=$GROQ_API_KEY groq-app:latest
+                '''
+            }
+        }
+
+        stage('Deploy to Minikube') {
+            steps {
+                echo '🚀 Déploiement sur Minikube...'
+                sh '''
+                    eval $(minikube -p minikube docker-env)
+
+                    # ✅ Définir le bon fichier de config kubectl
+                    export KUBECONFIG=/var/lib/jenkins/.kube/config
+
+                    # Vérifie que Minikube est bien accessible
+                    kubectl cluster-info
+
+                    # Déploie ton app
+                    kubectl apply -f k8s/secret.yaml
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/service.yaml
+
+                    # Attends la fin du déploiement
+                    kubectl rollout status deployment/groq-app
+
+                    # Vérifie les pods
+                    kubectl get pods -o wide
+                '''
+                echo '✅ Déploiement terminé avec succès !'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo '🧹 Nettoyage du workspace et des conteneurs temporaires...'
+            sh '''
+                docker system prune -f
+                docker image prune -f
+            '''
+            cleanWs()
+        }
+
+        success {
+            echo '🎉 Pipeline exécuté avec succès !'
+        }
+
+        failure {
+            echo '❌ Échec du pipeline. Vérifie les logs pour plus de détails.'
+        }
+
+        unstable {
+            echo '⚠️ Le pipeline est instable. Certaines étapes ont échoué partiellement.'
+        }
+    }
+}
