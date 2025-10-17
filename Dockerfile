@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Exposer le port 8000 pour Prometheus
-EXPOSE 8000
+EXPOSE 8010
 
 # Définir la variable d'environnement (sera injectée par Kubernetes)
 ENV GROQ_API_KEY=""
