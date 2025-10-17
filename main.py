@@ -68,7 +68,5 @@ ilos = [
 description = generate_module_description(ilos, groq_api_key)
 print("\n📚 Description du module générée :\n")
 print(description)
-# === Garder le conteneur en vie ===
-while True:
-    time.sleep(3600)  # dort 1h et recommence, juste pour que le pod reste vivant
+
 
