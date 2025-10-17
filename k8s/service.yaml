@@ -8,8 +8,8 @@ spec:
   selector:
     app: groq-app
   ports:
-    - name: http
-      port: 8000          # Port accessible dans le cluster
-      targetPort: 8000    # Port exposé dans ton container
-      nodePort: 30007     # Port accessible depuis l’extérieur (facultatif mais utile pour tests)
+    - name: metrics              # ✅ Renomme en "metrics" (Grafana/Prometheus l’attendent)
+      port: 8010                 # ✅ Port dans le cluster
+      targetPort: 8010           # ✅ Port du container
+      nodePort: 30007            # (optionnel) pour tests locaux
   type: NodePort
