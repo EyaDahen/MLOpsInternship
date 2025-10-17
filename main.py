@@ -1,25 +1,30 @@
 # === main.py ===
-
 from groq import Groq
 import os
 import requests
 import time
+from prometheus_client import start_http_server, Counter, Histogram
 
+# ====== [1] DÉFINIR LES MÉTRIQUES ======
+REQUEST_COUNT = Counter('groq_requests_total', 'Total number of calls to Groq API')
+REQUEST_LATENCY = Histogram('groq_request_latency_seconds', 'Latency of Groq API requests in seconds')
 
-# Récupérer la clé API Groq depuis la variable d'environnement
+# ====== [2] DÉMARRER LE SERVEUR PROMETHEUS ======
+# Il expose les métriques sur http://localhost:8000/metrics
+start_http_server(8000)
+print("🚀 Prometheus metrics available at http://localhost:8000/metrics")
+
+# ====== [3] TON CODE EXISTANT ======
 groq_api_key = os.environ.get("GROQ_API_KEY")
 
-# Vérifier que la clé est disponible
 if not groq_api_key:
     raise Exception("Groq API key is missing!")
 
-# Initialiser le client Groq
 groq_client = Groq(api_key=groq_api_key)
 
 def generate_module_description(ilos, groq_api_key):
     """Génère une description professionnelle du module à partir des ILOs (Intended Learning Outcomes)."""
 
-    # Préparer le prompt
     ilos_formatted = "\n".join(f"- {ilo}" for ilo in ilos)
     prompt = f"""
 Rédigez une description professionnelle et fluide du module qui résume les résultats d'apprentissage sans les répéter mot à mot.
@@ -27,14 +32,12 @@ La description doit se concentrer sur les compétences et les connaissances que 
 {ilos_formatted}
 """
 
-    # Définir l'URL de l'API Groq et les en-têtes
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {groq_api_key}",
         "Content-Type": "application/json"
     }
 
-    # Définir la charge utile
     payload = {
         "model": "llama-3.1-8b-instant",
         "messages": [
@@ -45,15 +48,24 @@ La description doit se concentrer sur les compétences et les connaissances que 
         "max_tokens": 300
     }
 
-    # Envoyer la requête
-    response = requests.post(url, headers=headers, json=payload)
+    # ====== [4] MESURER LE TEMPS ET COMPTER LES REQUÊTES ======
+    start_time = time.time()
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        latency = time.time() - start_time
+        REQUEST_LATENCY.observe(latency)
+        REQUEST_COUNT.inc()
 
-    if response.status_code == 200:
-        result = response.json()
-        description = result['choices'][0]['message']['content']
-        return description.strip()
-    else:
-        raise Exception(f"Échec de la requête API Groq : {response.status_code} - {response.text}")
+        if response.status_code == 200:
+            result = response.json()
+            description = result['choices'][0]['message']['content']
+            return description.strip()
+        else:
+            raise Exception(f"Échec de la requête API Groq : {response.status_code} - {response.text}")
+
+    except Exception as e:
+        REQUEST_COUNT.inc()
+        raise e
 
 
 # === Exemple d'utilisation ===
@@ -64,9 +76,12 @@ ilos = [
     "Implémenter des algorithmes d'apprentissage par renforcement, y compris la programmation dynamique, les méthodes de Monte Carlo, l'apprentissage par différence temporelle, Q-learning et les réseaux de neurones Q profonds (DQN)."
 ]
 
-# Appeler la fonction et afficher le résultat
 description = generate_module_description(ilos, groq_api_key)
+
 print("\n📚 Description du module générée :\n")
 print(description)
 
-
+# Maintenir le script en vie pour que Prometheus puisse scrapper
+print("\n🕒 Monitoring actif. Appuyez sur Ctrl+C pour arrêter.")
+while True:
+    time.sleep(10)
