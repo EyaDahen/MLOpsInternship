@@ -3,6 +3,8 @@
 from groq import Groq
 import os
 import requests
+import time
+
 
 # Récupérer la clé API Groq depuis la variable d'environnement
 groq_api_key = os.environ.get("GROQ_API_KEY")
