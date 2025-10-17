@@ -1,0 +1,3 @@
+requests
+groq
+prometheus_client
