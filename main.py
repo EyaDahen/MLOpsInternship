@@ -81,7 +81,8 @@ description = generate_module_description(ilos, groq_api_key)
 print("\n📚 Description du module générée :\n")
 print(description)
 
-# Maintenir le script en vie pour que Prometheus puisse scrapper
-print("\n🕒 Monitoring actif. Appuyez sur Ctrl+C pour arrêter.")
-while True:
-    time.sleep(10)
+# Si on n'est pas dans Jenkins, garder le monitoring actif
+if os.environ.get("RUN_MODE", "prod") == "prod":
+    print("\n🕒 Monitoring actif. Appuyez sur Ctrl+C pour arrêter.")
+    while True:
+        time.sleep(10)
