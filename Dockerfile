@@ -3,20 +3,17 @@
 # -------------------------------
 FROM python:3.10-slim
 
-# Répertoire de travail
+# Répertoire de travail dans le conteneur
 WORKDIR /app
 
-# Copier le code source dans le conteneur
+# Copier le code source
 COPY . .
 
-# Installer les dépendances nécessaires
-RUN pip install --no-cache-dir flask requests groq
+# Installer les dépendances
+RUN pip install --no-cache-dir requests groq
 
-# Exposer le port Flask
-EXPOSE 5000
-
-# Variable d’environnement pour Groq (sera surchargée par Kubernetes)
+# Définir la variable d'environnement pour Groq
 ENV GROQ_API_KEY=""
 
-# Commande de lancement Flask
+# Commande de lancement
 CMD ["python", "main.py"]
