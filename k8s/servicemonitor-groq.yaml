@@ -1,14 +1,18 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: groq-servicemonitor
+  name: groq-app-servicemonitor
+  namespace: monitoring
   labels:
     release: prometheus
 spec:
   selector:
     matchLabels:
       app: groq-app
+  namespaceSelector:
+    matchNames:
+      - default
   endpoints:
-    - port: http
-      path: /metrics
+    - port: metrics
+      path: /
       interval: 15s
