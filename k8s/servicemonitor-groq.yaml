@@ -13,6 +13,6 @@ spec:
     matchNames:
       - default
   endpoints:
-    - interval: 15s
-      path: /metrics         # ton app expose bien les métriques à /metrics
-      port: http             # ⚠️ doit correspondre au nom du port dans ton Service
+    - port: metrics
+      path: /
+      interval: 15s
