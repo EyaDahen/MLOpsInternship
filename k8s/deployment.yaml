@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: groq-app
+        # 👉 Ajoute ces annotations pour Prometheus
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
     spec:
       containers:
         - name: groq-app
@@ -23,4 +26,4 @@ spec:
                   name: groq-secret
                   key: api-key
           ports:
-            - containerPort: 5000
+            - containerPort: 8000
