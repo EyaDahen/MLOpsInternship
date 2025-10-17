@@ -10,9 +10,9 @@ REQUEST_COUNT = Counter('groq_requests_total', 'Total number of calls to Groq AP
 REQUEST_LATENCY = Histogram('groq_request_latency_seconds', 'Latency of Groq API requests in seconds')
 
 # ====== [2] DÉMARRER LE SERVEUR PROMETHEUS ======
-# Il expose les métriques sur http://localhost:8000/metrics
-start_http_server(8000)
-print("🚀 Prometheus metrics available at http://localhost:8000/metrics")
+port = int(os.getenv("METRICS_PORT", 8010))  # par défaut 8010 si non défini
+start_http_server(port)
+print(f"🚀 Prometheus metrics available at http://localhost:{port}/metrics")
 
 # ====== [3] TON CODE EXISTANT ======
 groq_api_key = os.environ.get("GROQ_API_KEY")
