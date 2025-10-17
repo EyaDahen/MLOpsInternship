@@ -1,9 +1,12 @@
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: groq-job
+  name: groq-app
 spec:
-  backoffLimit: 2 # nombre max de redémarrages si erreur
+  replicas: 1
+  selector:
+    matchLabels:
+      app: groq-app
   template:
     metadata:
       labels:
@@ -19,4 +22,5 @@ spec:
                 secretKeyRef:
                   name: groq-secret
                   key: api-key
-      restartPolicy: Never
+          ports:
+            - containerPort: 5000
