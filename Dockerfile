@@ -3,16 +3,22 @@
 # -------------------------------
 FROM python:3.10-slim
 
-# Répertoire de travail dans le conteneur
+# Répertoire de travail
 WORKDIR /app
 
-# Copier le code source
+# Copier le fichier de dépendances en premier (meilleur cache Docker)
+COPY requirements.txt .
+
+# Installer les dépendances Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copier le reste du code
 COPY . .
 
-# Installer les dépendances
-RUN pip install --no-cache-dir requests groq
+# Exposer le port 8000 pour Prometheus
+EXPOSE 8000
 
-# Définir la variable d'environnement pour Groq
+# Définir la variable d'environnement (sera injectée par Kubernetes)
 ENV GROQ_API_KEY=""
 
 # Commande de lancement
