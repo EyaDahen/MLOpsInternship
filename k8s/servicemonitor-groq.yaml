@@ -13,6 +13,6 @@ spec:
     matchNames:
       - default
   endpoints:
-    - port: metrics
-      path: /
+    - port: metrics       # ✅ correspond au nom défini dans le Service
+      path: /metrics      # ✅ endpoint réel exposé par prometheus_client
       interval: 15s
