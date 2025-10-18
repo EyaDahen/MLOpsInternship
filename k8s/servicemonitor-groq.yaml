@@ -1,10 +1,10 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: groq-app-servicemonitor
+  name: groq-servicemonitor
   namespace: monitoring
   labels:
-    release: prometheus
+    release: kube-prometheus-stack   # ✅ correspond au nom Helm release
 spec:
   selector:
     matchLabels:
@@ -13,6 +13,6 @@ spec:
     matchNames:
       - default
   endpoints:
-    - port: metrics       # ✅ correspond au nom défini dans le Service
-      path: /metrics      # ✅ endpoint réel exposé par prometheus_client
+    - port: metrics
+      path: /metrics
       interval: 15s
